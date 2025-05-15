@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Gửi đánh giá hệ thống</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 30px;
+            background-color: #6bcf7e;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
+            height: 77px;
+        }
+
+        header .logo img {
+            height: 100px;
+        }
+
+        header h1 {
+            flex-grow: 1;
+            text-align: center;
+            margin: 0;
+            font-size: 32px;
+            color: white;
+        }
+
+        header a {
+            color: white;
+            font-weight: bold;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        header a:hover {
+            color: #eaffea;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 40px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #4CAF50;
+            cursor: pointer;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        input, select, textarea {
+            padding: 12px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: #4CAF50;
+            outline: none;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        button {
+            padding: 12px;
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            font-size: 1em;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .review {
+            background-color: #f7f9fa;
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #4CAF50;
+        }
+
+        .review strong {
+            color: #333;
+        }
+
+        .review time {
+            display: block;
+            font-size: 0.9em;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        #reviews {
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 15px;
+            }
+
+            header h1 {
+                text-align: left;
+                font-size: 24px;
+            }
+
+            header .logo, header a {
+                align-self: center;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/index.html" style="display: flex; align-items: center; text-decoration: none; flex-grow: 1;">
+            <div class="logo">
+                <img src="https://img.lovepik.com/photo/60160/7711.jpg_wh860.jpg" alt="Logo" />
+            </div>
+            <h1 style="margin-left: 20px; color: white;">Air Quality Forecast</h1>
+        </a>
+        <a href="/danh_gia.html">⭐Đánh giá⭐</a>
+    </header>
+
+
+    <div class="container">
+        <h1>⭐ Gửi đánh giá của bạn ⭐</h1>
+
+        <form id="reviewForm">
+            <input type="text" id="username" placeholder="Tên của bạn" required>
+
+            <label for="rating">Chọn số sao:</label>
+            <select id="rating" required>
+                <option value="">--Chọn--</option>
+                <option value="5">⭐⭐⭐⭐⭐ - Tuyệt vời</option>
+                <option value="4">⭐⭐⭐⭐ - Tốt</option>
+                <option value="3">⭐⭐⭐ - Trung bình</option>
+                <option value="2">⭐⭐ - Kém</option>
+                <option value="1">⭐ - Rất tệ</option>
+            </select>
+
+            <textarea id="comment" placeholder="Nhận xét của bạn..." required></textarea>
+
+            <button type="submit">Gửi đánh giá</button>
+        </form>
+
+        <hr>
+
+        <h2 id="toggleReviews">📋 Đánh giá gần đây</h2>
+        <div id="reviews"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById("reviewForm");
+        const reviewsDiv = document.getElementById("reviews");
+        const toggleReviewsBtn = document.getElementById("toggleReviews");
+
+        const API_URL = "https://6824cb9b0f0188d7e72ad8b9.mockapi.io/comments";
+
+        function formatTime(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString("vi-VN");
+        }
+
+        async function loadReviews() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    console.error("Lỗi khi tải đánh giá:", response.statusText);
+                    return;
+                }
+
+                const reviews = await response.json();
+                reviewsDiv.innerHTML = "";
+
+                reviews.sort((a, b) => new Date(b.createAt) - new Date(a.createAt));
+
+                reviews.forEach(r => {
+                    const div = document.createElement("div");
+                    div.className = "review";
+                    div.innerHTML = `
+                        <strong>${r.name}</strong> (${r.starsnumber} ⭐):<br>
+                        ${r.comment}
+                        <time>🕒 ${formatTime(r.createAt)}</time>
+                    `;
+                    reviewsDiv.appendChild(div);
+                });
+            } catch (error) {
+                console.error("Lỗi khi lấy đánh giá:", error);
+            }
+        }
+
+        form.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const name = document.getElementById("username").value.trim();
+            const starsnumber = document.getElementById("rating").value;
+            const comment = document.getElementById("comment").value.trim();
+
+            const review = {
+                name,
+                starsnumber: parseInt(starsnumber),
+                comment
+            };
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(review)
+                });
+
+                if (!response.ok) {
+                    console.error("Gửi đánh giá thất bại:", response.statusText);
+                    return;
+                }
+
+                if (reviewsDiv.style.display === "block") {
+                    loadReviews();
+                }
+
+                form.reset();
+            } catch (error) {
+                console.error("Lỗi khi gửi đánh giá:", error);
+            }
+        });
+
+        toggleReviewsBtn.addEventListener("click", function () {
+            if (reviewsDiv.style.display === "none") {
+                reviewsDiv.style.display = "block";
+                loadReviews();
+            } else {
+                reviewsDiv.style.display = "none";
+            }
+        });
+    </script>
+</body>
+</html>
